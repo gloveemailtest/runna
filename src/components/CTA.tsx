@@ -15,6 +15,7 @@ const CTA = () => {
           size="lg" 
           variant="secondary"
           className="text-lg px-8 py-6 font-bold shadow-elevated hover:scale-105 transition-all"
+          onClick={() => window.location.href = "/auth"}
         >
           Create Your Free Plan <ArrowRight className="ml-2" />
         </Button>
