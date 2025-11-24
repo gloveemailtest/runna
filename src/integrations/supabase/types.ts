@@ -14,7 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      completed_workouts: {
+        Row: {
+          actual_distance: number | null
+          actual_duration_minutes: number | null
+          completed_at: string | null
+          id: string
+          notes: string | null
+          rating: number | null
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          actual_distance?: number | null
+          actual_duration_minutes?: number | null
+          completed_at?: string | null
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          actual_distance?: number | null
+          actual_duration_minutes?: number | null
+          completed_at?: string | null
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "completed_workouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "completed_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          current_weekly_mileage: number | null
+          full_name: string | null
+          id: string
+          longest_recent_run: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_weekly_mileage?: number | null
+          full_name?: string | null
+          id: string
+          longest_recent_run?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_weekly_mileage?: number | null
+          full_name?: string | null
+          id?: string
+          longest_recent_run?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      training_plans: {
+        Row: {
+          created_at: string | null
+          goal_time_minutes: number
+          id: string
+          plan_data: Json
+          race_date: string
+          training_days_per_week: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          goal_time_minutes: number
+          id?: string
+          plan_data: Json
+          race_date: string
+          training_days_per_week: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          goal_time_minutes?: number
+          id?: string
+          plan_data?: Json
+          race_date?: string
+          training_days_per_week?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workouts: {
+        Row: {
+          cooldown: string | null
+          created_at: string | null
+          description: string | null
+          distance: number | null
+          duration_minutes: number | null
+          id: string
+          main_workout: string | null
+          pace_target: string | null
+          training_plan_id: string
+          warmup: string | null
+          workout_date: string
+          workout_type: string
+        }
+        Insert: {
+          cooldown?: string | null
+          created_at?: string | null
+          description?: string | null
+          distance?: number | null
+          duration_minutes?: number | null
+          id?: string
+          main_workout?: string | null
+          pace_target?: string | null
+          training_plan_id: string
+          warmup?: string | null
+          workout_date: string
+          workout_type: string
+        }
+        Update: {
+          cooldown?: string | null
+          created_at?: string | null
+          description?: string | null
+          distance?: number | null
+          duration_minutes?: number | null
+          id?: string
+          main_workout?: string | null
+          pace_target?: string | null
+          training_plan_id?: string
+          warmup?: string | null
+          workout_date?: string
+          workout_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workouts_training_plan_id_fkey"
+            columns: ["training_plan_id"]
+            isOneToOne: false
+            referencedRelation: "training_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
