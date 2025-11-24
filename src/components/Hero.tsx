@@ -28,6 +28,7 @@ const Hero = () => {
             size="lg" 
             variant="secondary"
             className="text-lg px-8 py-6 font-bold shadow-elevated hover:scale-105 transition-all"
+            onClick={() => window.location.href = "/auth"}
           >
             Start Free Training <ArrowRight className="ml-2" />
           </Button>
@@ -35,6 +36,7 @@ const Hero = () => {
             size="lg" 
             variant="outline"
             className="text-lg px-8 py-6 font-bold border-2 border-white text-white hover:bg-white/10"
+            onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
           >
             How It Works
           </Button>
