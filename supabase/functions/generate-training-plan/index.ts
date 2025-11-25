@@ -141,7 +141,9 @@ Generate a complete week-by-week plan starting from today (${today.toISOString()
       },
     });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Extract JWT token from Authorization header
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
       console.error("Auth error:", userError);
