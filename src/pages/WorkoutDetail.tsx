@@ -136,7 +136,7 @@ const WorkoutDetail = () => {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-primary">
         <header className="border-b bg-card shadow-sm">
           <div className="container mx-auto px-4 py-4">
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
