@@ -2,3 +2,6 @@ project_id = "srvekoqxnxljknmrfyis"
 
 [functions.generate-training-plan]
 verify_jwt = true
+
+[functions.generate-strength-plan]
+verify_jwt = true
