@@ -119,17 +119,29 @@ const StrengthPage = () => {
 
       // Check for errors in response
       if (response.error) {
+        console.error("Supabase function error:", response.error);
         const errorMessage = response.error.message || response.error.error || "Failed to generate workout";
+        
+        // Provide more helpful error messages
+        if (errorMessage.includes("LOVABLE_API_KEY") || errorMessage.includes("not configured")) {
+          throw new Error("AI service not configured. Please contact support.");
+        }
+        if (errorMessage.includes("Authentication failed") || errorMessage.includes("authorization")) {
+          throw new Error("Please sign in again to generate workouts.");
+        }
+        
         throw new Error(errorMessage);
       }
 
       // Check if response.data has an error
       if (response.data?.error) {
+        console.error("Function returned error:", response.data.error);
         throw new Error(response.data.error);
       }
 
       // Check if response was successful
       if (response.data?.success !== true && !response.data?.workoutId) {
+        console.error("Unexpected response format:", response.data);
         throw new Error("Workout generation failed. Please try again.");
       }
 
