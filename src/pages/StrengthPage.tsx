@@ -111,8 +111,25 @@ const StrengthPage = () => {
         setTimeout(() => reject(new Error("Request timed out. Please try again.")), 60000); // 60 second timeout
       });
 
-      const functionPromise = supabase.functions.invoke("generate-strength-plan", {
-        body: { type: "general" },
+      // Get auth token for API call
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Please sign in again");
+      }
+
+      const functionPromise = fetch("/api/generate-strength-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ type: "general" }),
+      }).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to generate workout");
+        }
+        return { data, error: null };
       });
 
       const response = await Promise.race([functionPromise, timeoutPromise]) as any;
