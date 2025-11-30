@@ -15,9 +15,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-    if (!LOVABLE_API_KEY) {
-      return res.status(500).json({ error: 'LOVABLE_API_KEY is not configured' });
+    import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
     }
 
     const { injuries, type } = req.body;
