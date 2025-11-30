@@ -44,51 +44,53 @@ serve(async (req) => {
       throw new Error("Authentication failed");
     }
 
-    // Get available exercises
+    // Get available exercises - limit to most relevant ones for faster processing
     const { data: exercises } = await supabase
       .from("strength_exercises")
-      .select("*");
+      .select("*")
+      .limit(50); // Limit to 50 exercises for faster AI processing
 
     if (!exercises || exercises.length === 0) {
       throw new Error("No exercises available");
     }
 
-    // Build prompt based on type
-    let systemPrompt = `You are an expert running coach and physical therapist specializing in strength training for runners. 
-You create personalized strength workout plans that are safe, effective, and properly sequenced.`;
+    // Build prompt based on type - optimized for speed
+    let systemPrompt = `You are an expert running coach. Create safe, effective strength workouts for runners. Keep responses concise.`;
 
     let userPrompt = "";
     let workoutName = "";
     let isInjuryFocused = false;
+    let relevantExercises = exercises;
 
     if (injuries && injuries.length > 0) {
       isInjuryFocused = true;
       const injuryList = injuries.map((i: Injury) => 
-        `- ${i.body_part} (${i.severity})${i.description ? `: ${i.description}` : ""}`
-      ).join("\n");
+        `${i.body_part} (${i.severity})`
+      ).join(", ");
       
       workoutName = "Injury Recovery Workout";
-      userPrompt = `Create a rehabilitation-focused strength workout for a runner with these injuries:
-${injuryList}
-
-Focus on exercises that help with recovery and strengthening the affected areas without aggravating them.
-Include mobility work and exercises to prevent re-injury.`;
+      userPrompt = `Create a rehab workout for injuries: ${injuryList}. Focus on recovery without aggravating injuries.`;
+      
+      // Filter exercises that help with these injuries
+      const injuryBodyParts = injuries.map((i: Injury) => i.body_part.toLowerCase());
+      relevantExercises = exercises.filter((e: any) => 
+        e.helps_with_injuries?.some((injury: string) => 
+          injuryBodyParts.some(part => injury.toLowerCase().includes(part))
+        )
+      );
+      // If no specific matches, use all exercises
+      if (relevantExercises.length < 5) {
+        relevantExercises = exercises;
+      }
     } else {
       workoutName = "Runner's Strength Session";
-      userPrompt = `Create a general strength training workout for a runner.
-Focus on:
-- Core stability for better running form
-- Single-leg exercises for balance and power
-- Hip and glute strengthening
-- Injury prevention exercises`;
+      userPrompt = `Create a general runner strength workout focusing on core, single-leg exercises, hips, and glutes.`;
     }
 
-    userPrompt += `
+    // Limit exercise list to top 30 for faster processing
+    const exerciseList = relevantExercises.slice(0, 30).map((e: any) => e.name).join(", ");
 
-Available exercises (use only these by their exact names):
-${exercises.map((e: any) => `- ${e.name}: ${e.description}`).join("\n")}
-
-Create a workout with 5-8 exercises, properly sequenced from activation to main exercises to cool-down.`;
+    userPrompt += ` Use 5-8 exercises from this list: ${exerciseList}. Format: exercise name, sets, reps.`;
 
     console.log("Calling AI for strength plan generation...");
 
@@ -104,6 +106,8 @@ Create a workout with 5-8 exercises, properly sequenced from activation to main 
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
+        temperature: 0.7, // Lower temperature for faster, more consistent responses
+        max_tokens: 1000, // Limit tokens for faster response
         tools: [
           {
             type: "function",
@@ -143,19 +147,23 @@ Create a workout with 5-8 exercises, properly sequenced from activation to main 
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
       
+      let errorMessage = "Failed to generate workout";
       if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        errorMessage = "Rate limit exceeded. Please try again in a moment.";
+      } else if (aiResponse.status === 402) {
+        errorMessage = "AI credits exhausted. Please add credits to continue.";
+      } else if (aiResponse.status === 401) {
+        errorMessage = "Authentication failed. Please sign in again.";
+      } else if (aiResponse.status >= 500) {
+        errorMessage = "Server error. Please try again in a moment.";
+      } else {
+        errorMessage = `AI service error (${aiResponse.status}). Please try again.`;
       }
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      
+      return new Response(
+        JSON.stringify({ error: errorMessage, success: false }),
+        { status: aiResponse.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiData = await aiResponse.json();
@@ -190,7 +198,7 @@ Create a workout with 5-8 exercises, properly sequenced from activation to main 
       throw workoutError;
     }
 
-    // Create exercise map for lookup
+    // Create exercise map for lookup (use all exercises, not just filtered)
     const exerciseMap = new Map(
       exercises.map((e: any) => [e.name.toLowerCase(), e.id])
     );
@@ -234,8 +242,12 @@ Create a workout with 5-8 exercises, properly sequenced from activation to main 
     );
   } catch (error) {
     console.error("Error in generate-strength-plan:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ 
+        error: errorMessage,
+        success: false 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { 
@@ -63,14 +63,15 @@ const AppLayout = ({ children, title }: AppLayoutProps) => {
                   key={item.path}
                   variant={location.pathname === item.path ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => navigate(item.path)}
+                  asChild
                   className={cn(
-                    "gap-2",
                     location.pathname === item.path && "bg-gradient-primary"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
+                  <Link to={item.path} className="gap-2 flex items-center">
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
                 </Button>
               ))}
             </nav>
@@ -85,9 +86,9 @@ const AppLayout = ({ children, title }: AppLayoutProps) => {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t glass">
           <div className="flex justify-around py-2">
             {navItems.map((item) => (
-              <button
+              <Link
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                to={item.path}
                 className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
                   location.pathname === item.path
@@ -97,7 +98,7 @@ const AppLayout = ({ children, title }: AppLayoutProps) => {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="text-xs">{item.label}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </nav>
