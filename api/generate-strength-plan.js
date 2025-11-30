@@ -94,4 +94,74 @@ export default async function handler(req, res) {
         model: "gpt-4o",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content
+          { role: "system", content: "You are an elite running strength coach." },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
+
+    if (!aiResponse.ok) {
+      const text = await aiResponse.text();
+      return res.status(aiResponse.status).json({
+        error: "OpenAI Request Failed",
+        details: text
+      });
+    }
+
+    const aiJson = await aiResponse.json();
+    const workout = JSON.parse(aiJson.choices[0].message.content);
+
+    // -------------------------
+    // Store workout
+    // -------------------------
+    const { data: newWorkout, error: workoutError } = await supabase
+      .from("strength_workouts")
+      .insert({
+        user_id: user.id,
+        name: workout.name,
+        description: workout.description,
+        duration_minutes: workout.duration_minutes,
+        is_injury_focused: injuries?.length > 0,
+        scheduled_date: new Date().toISOString().split("T")[0]
+      })
+      .select()
+      .single();
+
+    if (workoutError) {
+      return res.status(500).json({ error: workoutError.message });
+    }
+
+    // match exercises
+    const exerciseMap = new Map(exercises.map((e) => [e.name.toLowerCase(), e.id]));
+
+    const inserts = workout.exercises
+      .map((ex, idx) => {
+        const id = exerciseMap.get(ex.exercise_name.toLowerCase());
+        if (!id) return null;
+        return {
+          strength_workout_id: newWorkout.id,
+          exercise_id: id,
+          sets: ex.sets,
+          reps: ex.reps,
+          notes: ex.notes,
+          order_index: idx
+        };
+      })
+      .filter(Boolean);
+
+    if (inserts.length > 0) {
+      await supabase.from("strength_workout_exercises").insert(inserts);
+    }
+
+    return res.status(200).json({
+      success: true,
+      workoutId: newWorkout.id,
+      workout
+    });
+  } catch (err) {
+    console.error("API ERROR:", err);
+    return res.status(500).json({
+      error: err.message || "Unknown error"
+    });
+  }
+}
